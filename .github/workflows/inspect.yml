@@ -1,0 +1,30 @@
+name: Inspect direct-artifact semantics fixture
+
+on:
+  workflow_run:
+    workflows: ["Produce direct-artifact semantics fixture"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+    steps:
+      - name: Download matched artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/direct-artifact-control /tmp/direct-artifact-differential
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name artifact-path-control --dir /tmp/direct-artifact-control
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name payload.zip --dir /tmp/direct-artifact-differential
+      - name: Emit bounded mode and digest evidence
+        run: |
+          set -euo pipefail
+          find /tmp/direct-artifact-control /tmp/direct-artifact-differential -maxdepth 2 -type f -printf '%m %p\n' | LC_ALL=C sort
+          find /tmp/direct-artifact-control /tmp/direct-artifact-differential -maxdepth 2 -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
