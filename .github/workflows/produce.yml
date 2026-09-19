@@ -1,0 +1,29 @@
+name: Produce direct-artifact semantics fixture
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fixture
+        uses: actions/checkout@v5
+      - name: Upload ordinary archive control
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifact-path-control
+          path: payload.zip
+          archive: true
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload direct raw differential
+        uses: actions/upload-artifact@v7
+        with:
+          path: payload.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 1
